@@ -1,4 +1,5 @@
 from lineage_tool import lineage
+from pyspark_generator import code_generator
 from langchain.tools import Tool, tool
 
 import os
@@ -44,59 +45,9 @@ llm = AzureChatOpenAI(
 def generate_pyspark_code():
     """Generates the pyspark code for the lineage document"""
     global llm
-    global lineage_doc
     # Step 2: Create a prompt template
-    prompt = ChatPromptTemplate.from_template("""You are an expert ETL developer with deep knowledge of both Informatica PowerCenter and Apache PySpark. Your task is to convert the provided Informatica mapping lineage document into a functional, clean, and well-documented PySpark script.
-
-Analyze the provided CSV data, which details the end-to-end lineage from source to target. Each row represents a link between two components in an Informatica mapping.
-
-**Follow these instructions precisely:**
-
-1.  **Overall Structure:**
-    * The final output must be a single PySpark script.
-    * Start with the necessary imports (`pyspark.sql`, `pyspark.sql.functions as F`, etc.).
-    * Define placeholder variables at the top of the script for Informatica parameters like `$$LANGUAGE_CODE`, `$$ETL_PROC_WID`, etc. This makes the script configurable.
-    * Create a placeholder for reading the source data (`W_WRKFC_EVENT_TYPE_DS`) into a DataFrame named `source_df`.
-
-2.  **Transformation Logic:**
-    * Sequentially reconstruct the data flow based on the `FromInstance` and `ToInstance` columns. Create a new DataFrame for each major transformation step (e.g., `exp_validate_df`, `lkp_joined_df`, `final_df`).
-    * **Expressions (`Expression`):** Translate the logic in the `Transformation` column into PySpark using `withColumn()` and functions from `pyspark.sql.functions`.
-    * **Filters (`Filter`):** Implement these using the `.filter()` or `.where()` method.
-    * **Lookups (`Lookup Procedure`):**
-        * For each lookup, parse the `Lookup Sql Override` in the `Transformation` column.
-        * Represent the lookup query as a new DataFrame (e.g., `lkp_eventtype_df = spark.sql("...")`).
-        * Perform a **left join** from the main data flow DataFrame to the lookup DataFrame.
-        * The join condition is based on the fields connecting to the lookup (e.g., `EVENT_REASON_CODE` going into `LKP_EventReason`).
-    * **Update Strategy (`Update Strategy`):**
-        * The logic `IIF(UPDATE_FLG = 'I' OR UPDATE_FLG = 'B', DD_INSERT, ...)` determines the action for each row.
-        * Create a new column, for instance `operation_flag`, based on the `UPDATE_FLG` field. Map `DD_INSERT` to 'insert', `DD_UPDATE` to 'update', and `DD_REJECT` to 'reject'.
-    * **Mapplets (`Mapplet`):** Treat mapplets as logical containers. Follow the lineage links into and out of the mapplet to implement its logic directly within the main script flow.
-
-3.  **Function and Variable Translation:**
-    * Translate Informatica functions to their PySpark equivalents:
-        * `IIF(condition, true_val, false_val)` -> `F.when(condition, true_val).otherwise(false_val)`
-        * `ISNULL(column)` -> `F.col(column).isNull()`
-        * `SESSSTARTTIME` -> `F.current_timestamp()`
-        * `LENGTH(str)` -> `F.length(F.col(str))`
-    * Handle Informatica variables (`$$...`) as the configurable script variables defined at the beginning.
-
-4.  **Final Output:**
-    * The final DataFrame should select and name the columns as specified in the links to the `Target Definition` (`W_WRKFC_EVENT_TYPE_D`).
-    * Include comments in the code that reference the Informatica transformation name (e.g., `# Applying logic from Exp_W_WRKFC_EVENT_TYPE_Transform`) for clarity and traceability.
-    * Conclude with a placeholder showing how to write the final DataFrame, perhaps partitioning by the `operation_flag` or demonstrating a `MERGE` operation for a data lakehouse table (like Delta Lake).
-
-Here is the Informatica lineage data:
-```csv
-{lineage}
-```""")
-    # Step 3: Bind LLM to the prompt
-    chain = prompt | llm | StrOutputParser()
-    # Step 4: Invoke the chain
-    result = chain.invoke({"lineage": lineage_doc})
-    with open("event_type_pyspark.txt","w") as file:
-        file.write(result)
-    print("successfully stored the pyspark code")
-
+    code_generator()
+    return "Successfullt generated the pyspark code and stored in system"
 
 def create_agent():
     """

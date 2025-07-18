@@ -378,10 +378,10 @@ spark.stop()
         return complete_code
 
 # Usage example
-def main():
+def code_generator():
     # Configuration
     CSV_PATH = "Event_fact_new_rough_lineage.csv"      # Path to your CSV file
-    OUTPUT_PATH = "generated_pyspark_code1.py"
+    OUTPUT_PATH = "generated_pyspark_code.py"
     
     # Initialize processor
     processor = InformaticaLineageProcessor(max_tokens_per_chunk=15000)
@@ -396,4 +396,4 @@ def main():
         logger.exception("Top-level error")
 
 if __name__ == "__main__":
-    main()
+    code_generator()
